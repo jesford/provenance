@@ -19,7 +19,6 @@ import toolz as t
 import wrapt
 from alembic import command
 from alembic.config import Config as AlembicConfig
-from alembic import context as alembic_context
 from alembic.migration import MigrationContext
 
 import sqlalchemy_utils.functions as sql_utils
@@ -28,7 +27,6 @@ from memoized_property import memoized_property
 from . import _commonstore as cs
 from ._commonstore import find_first
 from . import models as db
-from . import models
 from . import serializers as s
 from . import utils
 from .compatibility import string_type
@@ -83,7 +81,8 @@ class Config(object):
     def set_current(cls, registry):
         cls._current = registry
 
-    def __init__(self, blobstores, repos, default_repo, run_info_fn=None, use_cache=True, read_only=False, check_mutations=False):
+    def __init__(self, blobstores, repos, default_repo, run_info_fn=None,
+                 use_cache=True, read_only=False, check_mutations=False):
         self.blobstores = blobstores
         self.repos = repos
         self.set_default_repo(default_repo)
@@ -132,9 +131,11 @@ def get_default_repo():
 
 def set_run_info_fn(fn):
     """
-    This hook allows you to provide a function that will be called once with a process's
-    `run_info` default dictionary. The provided function can then update this dictionary
-    with other useful information you wish to track, such as git ref or build server id.
+    This hook allows you to provide a function that will be
+    called once with a process's `run_info` default dictionary.
+    The provided function can then update this dictionary
+    with other useful information you wish to track, such as
+    git ref or build server id.
     """
     current_config().set_run_info_fn(fn)
 
@@ -178,7 +179,8 @@ def using_repo(repo_or_name):
 
 
 def load_artifact(artifact_id):
-    """Loads and returns the ``Artifact`` with the ``artifact_id`` from the default repo.
+    """Loads and returns the ``Artifact`` with the ``artifact_id``
+    from the default repo.
 
     Parameters
     ----------
@@ -192,7 +194,8 @@ def load_artifact(artifact_id):
 
 
 def load_proxy(artifact_id):
-    """Loads and returns the ``ArtifactProxy`` with the ``artifact_id`` from the default repo.
+    """Loads and returns the ``ArtifactProxy`` with the ``artifact_id``
+    from the default repo.
 
     Parameters
     ----------
@@ -206,7 +209,8 @@ def load_proxy(artifact_id):
 
 
 def load_set_by_id(set_id):
-    """Loads and returns the ``ArtifactSet`` with the ``set_id`` from the default repo.
+    """Loads and returns the ``ArtifactSet`` with the ``set_id``
+    from the default repo.
 
     Parameters
     ----------
@@ -220,7 +224,8 @@ def load_set_by_id(set_id):
 
 
 def load_set_by_labels(labels):
-    """Loads and returns the ``ArtifactSet`` with the ``labels`` from the default repo.
+    """Loads and returns the ``ArtifactSet`` with the ``labels``
+    from the default repo.
 
     Parameters
     ----------
@@ -235,7 +240,8 @@ def load_set_by_labels(labels):
 
 
 def load_set_by_name(set_name):
-    """Loads and returns the ``ArtifactSet`` with the ``set_name`` from the default repo.
+    """Loads and returns the ``ArtifactSet`` with the ``set_name``
+    from the default repo.
 
     Parameters
     ----------
@@ -248,10 +254,12 @@ def load_set_by_name(set_name):
     """
     return get_default_repo().get_set_by_labels({'name': set_name})
 
+
 def _check_labels_name(labels):
     if isinstance(labels, str):
         return {'name': labels}
     return labels
+
 
 def create_set(artifact_ids, labels=None):
     labels = _check_labels_name(labels)
@@ -318,7 +326,7 @@ class ArtifactProxy(wrapt.ObjectProxy, Proxy):
             format(self.artifact.id, repr(self.__wrapped__))
 
     def __reduce__(self):
-        return (load_proxy , (self.artifact.id,))
+        return (load_proxy, (self.artifact.id,))
 
 
 class CallableArtifactProxy(wrapt.CallableObjectProxy, Proxy):
@@ -347,7 +355,6 @@ def artifact_proxy(value, artifact):
 def is_proxy(obj):
     return (type(obj) == ArtifactProxy or
             type(obj) == CallableArtifactProxy)
-
 
 
 class Artifact(object):
@@ -418,8 +425,7 @@ def _artifact_id(artifact_or_id):
         return artifact_or_id.id
     if hasattr(artifact_or_id, 'artifact'):
         return artifact_or_id.artifact.id
-    raise Exception("Unable to coerce into an artifact id: {}".\
-                    format(artifact_or_id))
+    raise Exception("Unable to coerce into an artifact id: {}".format(artifact_or_id))
 
 
 def _artifact_from_record(repo, record):
@@ -498,7 +504,7 @@ class MemoryRepo(ArtifactRepository):
         artifact_id = _artifact_id(artifact_or_id)
         cs.ensure_delete(self)
         new_artifacts = list(t.filter(lambda a: a.id != artifact_id,
-                                 self.artifacts))
+                                      self.artifacts))
         if len(new_artifacts) == len(self.artifacts):
             raise KeyError(artifact_id, self)
         else:
@@ -556,7 +562,8 @@ def _inputs_json(inputs):
 
 def _ping_postgres(conn, branch):
     """
-    Code taken from example here: http://docs.sqlalchemy.org/en/latest/core/pooling.html#dealing-with-disconnects
+    Code taken from example here: http://docs.sqlalchemy.org/en/latest/core/
+    pooling.html#dealing-with-disconnects
     """
     if branch:
         # "branch" refers to a sub-connection of a connection,
@@ -605,6 +612,7 @@ def _check_pid(dbapi_connection, connection_record, connection_proxy):
             "attempting to check out in pid %s" %
             (connection_record.info['pid'], pid))
 
+
 @t.curry
 def _set_search_path(schema, dbapi_connection, connection_record, connection_proxy):
     cursor = dbapi_connection.cursor()
@@ -629,11 +637,11 @@ def _db_engine(conn_string, schema, persistent_connections=True):
 def _insert_set_members_sql(artifact_set):
     pairs = [(artifact_set.id, id) for id in artifact_set.artifact_ids]
     return """
-INSERT INTO artifact_set_members (set_id, artifact_id)
-VALUES
-{}
-ON CONFLICT DO NOTHING
-    """.strip().format(",\n".join(t.map(str,pairs)))
+    INSERT INTO artifact_set_members (set_id, artifact_id)
+    VALUES
+    {}
+    ON CONFLICT DO NOTHING
+    """.strip().format(",\n".join(t.map(str, pairs)))
 
 
 class Encoder(json.JSONEncoder):
@@ -669,7 +677,7 @@ class PostgresRepo(ArtifactRepository):
     def __init__(self, db, store,
                  read=True, write=True, read_through_write=True, delete=True,
                  create_db=False, schema=None, create_schema=True, persistent_connections=True):
-        upgrade_db=False
+        upgrade_db = False
         super(PostgresRepo, self).__init__(read=read, write=write,
                                            read_through_write=read_through_write,
                                            delete=delete)
@@ -693,10 +701,10 @@ class PostgresRepo(ArtifactRepository):
         else:
             self._session = db
 
-
         if create_schema and schema is not None:
             with self.session() as session:
-                q = sa.exists(sa.select([("schema_name")]).select_from(sa.text("information_schema.schemata"))
+                q = sa.exists(sa.select([("schema_name")]).select_from(
+                    sa.text("information_schema.schemata"))
                               .where(sa.text("schema_name = :schema")
                                      .bindparams(schema=schema)))
                 if not session.query(q).scalar():
@@ -731,7 +739,6 @@ class PostgresRepo(ArtifactRepository):
                 self._session.close()
                 del self._session
 
-
     def __contains__(self, artifact_or_id):
         cs.ensure_contains(self)
         artifact_id = _artifact_id(artifact_or_id)
@@ -748,7 +755,6 @@ class PostgresRepo(ArtifactRepository):
         session.execute(sql)
 
         return db.Run(info)
-
 
     @property
     def db_revision(self):
@@ -770,7 +776,6 @@ class PostgresRepo(ArtifactRepository):
             conn = session.connection()
             cfg = _alembic_config(conn)
             command.upgrade(cfg, "head")
-
 
     def put(self, artifact_record, read_through=False):
         with self.session() as session:
@@ -861,8 +866,8 @@ class PostgresRepo(ArtifactRepository):
 
     def contains_set(self, set_id):
         with self.session() as session:
-            if (session.query(db.ArtifactSet)
-                      .filter(db.ArtifactSet.set_id == set_id).count() > 0):
+            if (session.query(db.ArtifactSet).filter(
+                    db.ArtifactSet.set_id == set_id).count() > 0):
                 return True
             else:
                 return False
@@ -877,7 +882,6 @@ class PostgresRepo(ArtifactRepository):
             return self._db_to_mem_set(result)
         else:
             raise KeyError(set_id, self)
-
 
     def get_set_by_labels(self, labels):
         cs.ensure_read(self)
@@ -897,8 +901,8 @@ class PostgresRepo(ArtifactRepository):
     def delete_set(self, set_id):
         cs.ensure_delete(self, check_contains=False)
         with self.session() as session:
-            num_deleted = (session.query(db.ArtifactSet).
-             filter(db.ArtifactSet.set_id == set_id).delete())
+            num_deleted = (session.query(db.ArtifactSet).filter(
+                db.ArtifactSet.set_id == set_id).delete())
             (session.query(db.ArtifactSetMember).
              filter(db.ArtifactSetMember.set_id == set_id).delete())
 
@@ -991,17 +995,21 @@ class ChainedRepo(ArtifactRepository):
     def _filename(self, id):
         return cs.chained_filename(self, id)
 
-### ArtifactSet logic
+# ArtifactSet logic
+
 
 def _set_op(operator, *sets, labels=None):
     new_ids = t.reduce(operator, t.map(lambda s: s.artifact_ids, sets))
     return ArtifactSet(new_ids, labels)
+
 
 set_union = t.partial(_set_op, ops.or_)
 set_difference = t.partial(_set_op, ops.sub)
 set_intersection = t.partial(_set_op, ops.and_)
 
 artifact_set_properties = ['id', 'artifact_ids', 'created_at', 'labels']
+
+
 class ArtifactSet(namedtuple('ArtifactSet', artifact_set_properties)):
 
     def __new__(cls, artifact_ids, labels=None, created_at=None, id=None):
@@ -1124,9 +1132,10 @@ def coerce_to_artifact(artifact_or_id, repo=None):
     raise ValueError('Was unable to coerce object into an Artifact: {}'
                      .format(artifact_or_id))
 
+
 def coerce_to_artifacts(artifact_or_ids, repo=None):
     repo = repo if repo else get_default_repo()
-    #TODO: bring this back when/if batch_get_by_id is added to chained repo
+    # TODO: bring this back when/if batch_get_by_id is added to chained repo
     # if all(isinstance(a, string_type) for a in artifact_or_ids):
     #     return repo.batch_get_by_id(artifact_or_ids)
     return [coerce_to_artifact(a, repo) for a in artifact_or_ids]
@@ -1178,6 +1187,7 @@ class lazy_dict(object):
     def __repr__(self):
         return "lazy_dict({})".format(
             t.merge(t.valmap(lambda _: "...", self.thunks), self.realized))
+
 
 def lazy_proxy_dict(artifacts_or_ids, group_artifacts_of_same_name=False):
     """

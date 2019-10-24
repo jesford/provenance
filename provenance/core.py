@@ -42,7 +42,6 @@ artifact_properties = ['id', 'value_id', 'inputs', 'fn_module', 'fn_name', 'valu
 ArtifactRecord = namedtuple('ArtifactRecord', artifact_properties)
 
 
-
 def fn_info(f):
     info = utils.fn_info(f)
     metadata = get_metadata(f)
@@ -152,10 +151,8 @@ def composite_artifact(repo, _run_info, inputs, input_hashes, input_artifact_ids
     info['load_kwargs'] = info['load_kwargs'].get(key, None)
     info['dump_kwargs'] = info['dump_kwargs'].get(key, None)
 
-
-
     if info['serializer'] == 'auto':
-        info['serializer'] =  s.object_serializer(value)
+        info['serializer'] = s.object_serializer(value)
 
     id = create_id(input_hashes, input_hash_fn, info['name'], info['version'])
     hash_duration = time.time() - start_hash_time
@@ -163,7 +160,6 @@ def composite_artifact(repo, _run_info, inputs, input_hashes, input_artifact_ids
     start_value_id_time = time.time()
     value_id = hash(value)
     value_id_duration = time.time() - start_hash_time
-
 
     if not use_cache:
         id = hash(id + value_id)
@@ -193,6 +189,8 @@ def _base_fn(f):
 
 _EXT_MAPPINGS = {'mpeg': 'mpg',
                  'jpeg': 'jpg'}
+
+
 def _extract_extension(filename):
     ext = os.path.splitext(filename)[1]
     if len(ext) > 0:
@@ -236,7 +234,6 @@ def provenance_wrapper(repo, f):
                      'load_kwargs': func_info['load_kwargs'],
                      'dump_kwargs': func_info['dump_kwargs'],
                      'composite': func_info['composite']}
-
 
     @bfu.wraps(f)
     def _provenance_wrapper(*args, **kargs):
@@ -318,11 +315,8 @@ def provenance_wrapper(repo, f):
                 artifact_info_['load_kwargs'] = None
                 artifact_info_['dump_kwargs'] = None
 
-
             if artifact_info_['serializer'] == 'auto':
-                artifact_info_['serializer'] =  s.object_serializer(value)
-
-
+                artifact_info_['serializer'] = s.object_serializer(value)
 
             start_value_id_time = time.time()
             if archive_file:
@@ -369,7 +363,6 @@ def provenance_wrapper(repo, f):
         # So for now, the cleanest way is to accept the potential re-downloading of data.
             os.remove(filename)
 
-
         return artifact.proxy()
 
     if utils.is_curry_func(f):
@@ -382,8 +375,8 @@ def provenance_wrapper(repo, f):
         for arg, value in param_info.items():
             args.append(arg)
             if value != utils.UNSPECIFIED_ARG:
-               defaults.append(value)
-        arg_inv = ['{}={}'.format(arg,arg) for arg in args]
+                defaults.append(value)
+        arg_inv = ['{}={}'.format(arg, arg) for arg in args]
         fb.body = 'return _provenance_wrapper(%s)' % ", ".join(arg_inv)
         fb.args = args
         fb.defaults = tuple(defaults)
@@ -401,12 +394,13 @@ def remove_inputs_fn(to_remove):
 
 
 def ensure_proxies(*parameters):
-    """Decorator that ensures that the provided parameters are always arguments of type ArtifactProxy.
+    """Decorator that ensures that the provided parameters
+    are always arguments of type ArtifactProxy.
 
     When no parameters are passed then all arguments will be checked.
 
-    This is useful to use on functions where you want to make sure artifacts
-    are being passed in so lineage can be tracked.
+    This is useful to use on functions where you want to make sure
+    artifacts are being passed in so lineage can be tracked.
     """
 
     def decorator(func):
